@@ -9,27 +9,26 @@ from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 from keras.optimizers import Adam
 from keras import Model
 from sklearn.metrics import precision_score, recall_score
-from model.UNet import UNetLight
-from model.SequenceUNet import SeqUNet
-from model.loss import DiceLoss
-from utils.data_utils import prepare_data
-from definitions import ROOT_DIR
+from src.model.UNet import UNetLight, UNetAdvanced
+from src.model.SequenceUNet import SeqUNet
+from src.model.loss import DiceLoss
+from src.utils.data.data_utils import prepare_data, DATASET_SIZE, SIGNAL_SIZE, LEARNING_RATE, TRAINING_BATCH_SIZE, \
+    DOWNSAMPLING_STEP, TRAINING_PERCENTAGE, MAX_EPOCHS
+from src.utils.data.data_generator import SequenceDataGenerator
+from src.definitions import ROOT_DIR
 
-TENSORBOARD_LOG_DIR = os.path.join(ROOT_DIR, 'tensorboard_logs')
-CHECKPOINT_ROOT = os.path.join(ROOT_DIR, 'checkpoints')
-MAX_EPOCHS = 100
+TENSORBOARD_LOG_DIR = os.path.join(ROOT_DIR, 'storage', 'tensorboard_logs')
+CHECKPOINT_ROOT = os.path.join(ROOT_DIR, 'storage', 'checkpoints')
 RANDOM_SEED = 1234
 
 
 def train():
-    train_input, train_target, val_input, val_target, _, _, _ = prepare_data()
+    train_input, train_target, val_input, val_target, \
+        test_input, test_target, test_input_not_normalized = prepare_data(cut_signal_length=False,
+                                                                          build_tf_datasets=False)
 
-    train_model = SeqUNet(input_shape=(1024, 1))
+    train_model = UNetLight(input_shape=(SIGNAL_SIZE, 1))
     print(train_model.summary())
-
-    learning_rate = 0.001
-
-    batch_size = 32
 
     tensorboard_callback = TensorBoard(log_dir=TENSORBOARD_LOG_DIR, histogram_freq=1)
     early_stopping = EarlyStopping(monitor='val_loss', patience=15)
@@ -46,24 +45,30 @@ def train():
                                   mode='min')
 
     train_model.compile(loss=DiceLoss(),
-                        optimizer=Adam(learning_rate=learning_rate))
+                        optimizer=Adam(learning_rate=LEARNING_RATE))
 
     train_model.fit(x=train_input,
                     y=train_target,
-                    validation_data=(val_input, val_target),
                     epochs=MAX_EPOCHS,
-                    batch_size=batch_size,
-                    callbacks=[tensorboard_callback, early_stopping, checkpoints],
-                    verbose=2)
+                    batch_size=TRAINING_BATCH_SIZE,
+                    validation_data=(val_input, val_target),
+                    callbacks=[tensorboard_callback, early_stopping, checkpoints])
 
-    save_model(train_model)
+    train_model.load_weights(os.path.join(check_dir, 'check'))
+
+    saved_model_path = save_model(train_model)
+
+    test(saved_model_path)
 
     return train_model
 
 
 def save_model(new_model: Model):
     now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M')
-    new_model.save(os.path.join('saved_models', 'model_{}'.format(now)))
+    saved_model_path = os.path.join(ROOT_DIR,  'storage/saved_models', 'model_{}'.format(now))
+    new_model.save(saved_model_path)
+
+    return saved_model_path
 
 
 def test(filepath):

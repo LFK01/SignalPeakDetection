@@ -1,4 +1,4 @@
-from utils import Peak
+from src.utils import Peak
 
 
 class Signal:
@@ -18,6 +18,6 @@ class SignalLight:
                  length: int,
                  peaks: list[float],
                  data: list[int]):
-        self.length = length
-        self.peaks = peaks
-        self.data = data
+        self.length: int = length
+        self.peaks: list[float] = peaks
+        self.data: list[int] = data

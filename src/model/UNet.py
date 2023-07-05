@@ -63,10 +63,10 @@ def UNetAdvanced(input_shape=(None, 1)):
         cbr_layer = Activation("relu")(cbr_layer)
         return cbr_layer
 
-    def se_block(se_block_layer_input, layer_n):
+    def se_block(se_block_layer_input, se_layer_n):
         se_block_layer = GlobalAveragePooling1D()(se_block_layer_input)
-        se_block_layer = Dense(layer_n // 8, activation="relu")(se_block_layer)
-        se_block_layer = Dense(layer_n, activation="sigmoid")(se_block_layer)
+        se_block_layer = Dense(se_layer_n // 8, activation="relu")(se_block_layer)
+        se_block_layer = Dense(se_layer_n, activation="sigmoid")(se_block_layer)
         x_out = Multiply()([se_block_layer_input, se_block_layer])
         return x_out
 
@@ -136,10 +136,10 @@ def UNetLight(input_shape=(None, 1)):
         cbr_layer = Activation("relu")(cbr_layer)
         return cbr_layer
 
-    def se_block(se_block_layer_input, layer_n):
+    def se_block(se_block_layer_input, se_layer_n):
         se_block_layer = GlobalAveragePooling1D()(se_block_layer_input)
-        se_block_layer = Dense(layer_n // 8, activation="relu")(se_block_layer)
-        se_block_layer = Dense(layer_n, activation="sigmoid")(se_block_layer)
+        se_block_layer = Dense(se_layer_n // 8, activation="relu")(se_block_layer)
+        se_block_layer = Dense(se_layer_n, activation="sigmoid")(se_block_layer)
         x_out = Multiply()([se_block_layer_input, se_block_layer])
         return x_out
 
